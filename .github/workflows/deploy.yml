@@ -1,0 +1,103 @@
+name: Deploy GitHub Pages
+
+on:
+  # Every source sync pushed to main runs the live URL check below.
+  push:
+    branches: [main]
+  # GitHub Pages publishes main/(root) automatically when the branch changes.
+  # Dispatch manually only when changing the optional CNAME or requesting an extra check.
+  workflow_dispatch:
+    inputs:
+      custom_domain:
+        description: Optional hostname to write to the root CNAME file (DNS is configured separately)
+        required: false
+        type: string
+      validate_live_url:
+        description: Retry the selected Pages URL until it returns HTTP 200
+        required: false
+        default: false
+        type: boolean
+
+# Read-only by default; only the CNAME job needs to push a commit.
+permissions:
+  contents: read
+
+jobs:
+  configure-custom-domain:
+    name: Configure optional custom domain
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.custom_domain != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # Use main as the target even if the manual dispatch was started elsewhere.
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      # Treat the input as data, validate a DNS hostname, and never interpolate it into shell source.
+      - name: Validate hostname and update CNAME
+        env:
+          CUSTOM_DOMAIN: ${{ inputs.custom_domain }}
+        run: |
+          set -euo pipefail
+          domain_pattern='^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$'
+          if (( ${#CUSTOM_DOMAIN} > 253 )) || [[ ! "$CUSTOM_DOMAIN" =~ $domain_pattern ]]; then
+            echo "::error::Enter a hostname only, such as reetasalon.is-a.dev."
+            exit 1
+          fi
+
+          current_domain=""
+          if [[ -f CNAME ]]; then
+            current_domain="$(tr -d '\r' < CNAME)"
+          fi
+          if [[ "$current_domain" == "$CUSTOM_DOMAIN" ]]; then
+            echo "CNAME already contains this hostname; no commit is needed."
+            exit 0
+          fi
+
+          printf '%s\n' "$CUSTOM_DOMAIN" > CNAME
+          # Commit only CNAME so no other checkout content can be included.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- CNAME
+          git commit --only -m "Configure GitHub Pages custom domain" -- CNAME
+          # This push updates main; branch-based Pages handles the deployment automatically.
+          git push origin HEAD:main
+
+  validate-live-url:
+    name: Verify the published URL
+    needs: configure-custom-domain
+    if: ${{ always() && (github.event_name == 'push' || inputs.validate_live_url) && (needs.configure-custom-domain.result == 'success' || needs.configure-custom-domain.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    steps:
+      # Prefer the supplied custom hostname; otherwise check the repository's Pages URL.
+      - name: Select URL
+        id: target
+        env:
+          CUSTOM_DOMAIN: ${{ inputs.custom_domain }}
+        run: |
+          if [[ -n "$CUSTOM_DOMAIN" ]]; then
+            echo "url=https://$CUSTOM_DOMAIN/" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=https://rajasuna.github.io/Reeta-salon/" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Retry while the Pages build or external DNS changes propagate; fail unless the response is HTTP 200.
+      - name: Wait for HTTP 200
+        env:
+          TARGET_URL: ${{ steps.target.outputs.url }}
+        run: |
+          for attempt in $(seq 1 24); do
+            status="$(curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' --max-time 10 "$TARGET_URL" || true)"
+            if [[ "$status" == "200" ]]; then
+              echo "$TARGET_URL returned HTTP 200."
+              exit 0
+            fi
+            echo "Attempt $attempt/24: $TARGET_URL returned HTTP ${status:-unknown}."
+            sleep 10
+          done
+
+          echo "::error::The selected live URL did not return HTTP 200 before the retry limit."
+          exit 1

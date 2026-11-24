@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://rajasuna.github.io/Reeta-salon/sitemap.xml

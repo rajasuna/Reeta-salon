@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Reeta Salon Elite & Token Suite</title>
+<meta name="description" content="Explore Reeta Salon services, request a walk-in token or appointment, and check a request using its private access code.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://rajasuna.github.io/Reeta-salon/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Reeta Salon Elite & Token Suite">
+<meta property="og:description" content="Explore Reeta Salon services, request a walk-in token or appointment, and check a request using its private access code.">
+<meta property="og:url" content="https://rajasuna.github.io/Reeta-salon/">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
 <style>
 :root {
@@ -394,6 +401,15 @@ select.form-control { cursor: pointer; }
 .toast.show { transform: translateY(0); opacity: 1; }
 
 /* Responsive interaction foundations */
+.access-hidden { display: none !important; }
+.customer-booking-button:disabled,
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
+  transform: none;
+}
+.booking-error { color: var(--red); margin-top: 12px; }
 .menu-toggle,
 .nav-backdrop { display: none; }
 .nav-item,
@@ -634,29 +650,35 @@ button:focus-visible,
     </div>
 
     <nav class="nav-menu">
-      <button class="nav-item active" onclick="switchTab('dashboard', this)">
+      <button class="nav-item access-hidden" data-staff-only data-panel="dashboard" onclick="switchTab('dashboard', this)">
         📊 Dashboard & Stats
       </button>
-      <button class="nav-item" onclick="switchTab('queue', this)">
+      <button class="nav-item access-hidden" data-staff-only data-panel="queue" onclick="switchTab('queue', this)">
         🎟️ Live Token Queue
       </button>
-      <button class="nav-item" onclick="switchTab('clientPortal', this)">
+      <button class="nav-item active" data-panel="clientPortal" onclick="switchTab('clientPortal', this)">
         ✨ Client Booking Portal
       </button>
-      <button class="nav-item" onclick="switchTab('appointments', this)">
+      <button class="nav-item access-hidden" data-staff-only data-panel="appointments" onclick="switchTab('appointments', this)">
         📅 Appointments
       </button>
-      <button class="nav-item" onclick="switchTab('customers', this)">
+      <button class="nav-item access-hidden" data-staff-only data-panel="customers" onclick="switchTab('customers', this)">
         👥 Customer CRM
       </button>
-      <button class="nav-item" onclick="switchTab('services', this)">
+      <button class="nav-item access-hidden" data-staff-only data-panel="services" onclick="switchTab('services', this)">
         💇 Services & Pricing
       </button>
-      <button class="nav-item" onclick="switchTab('staff', this)">
+      <button class="nav-item access-hidden" data-staff-only data-panel="staff" onclick="switchTab('staff', this)">
         ⭐ Stylist Team
       </button>
-      <button class="nav-item" onclick="switchTab('reports', this)">
+      <button class="nav-item access-hidden" data-staff-only data-panel="reports" onclick="switchTab('reports', this)">
         📈 Business Reports
+      </button>
+      <button class="nav-item" id="staffSignInButton" type="button" onclick="openStaffLogin()">
+        🔐 Staff Sign In
+      </button>
+      <button class="nav-item access-hidden" id="staffSignOutButton" type="button" onclick="signOutStaff()">
+        ↪ Sign Out
       </button>
     </nav>
 
@@ -675,18 +697,18 @@ button:focus-visible,
           <span aria-hidden="true">☰</span>
         </button>
         <div class="header-copy">
-          <h1 id="pageTitle">Dashboard & Overview</h1>
-          <p>Real-time salon operations, queue tokens, appointments, and analytics.</p>
+          <h1 id="pageTitle">Client Booking Portal</h1>
+          <p>Explore services, request a walk-in token, or book an appointment.</p>
         </div>
       </div>
       <div class="header-actions">
         <div class="clock-badge" id="liveClock">--:--:--</div>
-        <button class="btn" onclick="openTokenModal()">+ Issue Token</button>
+        <button class="btn access-hidden" data-staff-only onclick="openTokenModal()">+ Issue Token</button>
       </div>
     </header>
 
     <!-- DASHBOARD PANEL -->
-    <section id="dashboard" class="panel active">
+    <section id="dashboard" class="panel access-hidden" data-staff-only>
       <div class="stat-grid">
         <div class="card stat-card">
           <div class="label">Today's Customers</div>
@@ -741,7 +763,7 @@ button:focus-visible,
     </section>
 
     <!-- TOKEN QUEUE PANEL -->
-    <section id="queue" class="panel">
+    <section id="queue" class="panel access-hidden" data-staff-only>
       <div class="card">
         <div class="section-head">
           <h2>Token Queue Management</h2>
@@ -754,16 +776,28 @@ button:focus-visible,
           <div id="queueTableContainer"></div>
         </div>
       </div>
+      <div class="card" style="margin-top:24px;">
+        <div class="section-head">
+          <h2>Online Booking & Token Requests</h2>
+          <button class="btn secondary" type="button" onclick="loadCustomerRequests()">Refresh</button>
+        </div>
+        <p style="color:var(--text-muted); margin-bottom:16px; line-height:1.6;">Customer contact details are available to signed-in staff only.</p>
+        <div id="onlineRequestsMessage" role="status" aria-live="polite"></div>
+        <div class="table-container" role="region" aria-label="Online customer requests; scroll horizontally to view all columns" tabindex="0">
+          <div id="onlineRequestsContainer"></div>
+        </div>
+      </div>
     </section>
 
     <!-- CLIENT PORTAL PANEL -->
-    <section id="clientPortal" class="panel">
+    <section id="clientPortal" class="panel active">
       <div class="public-banner">
         <h2>Welcome to Reeta Salon Luxury Styling</h2>
-        <p>Book your instant salon token or schedule an appointment online with our expert stylists.</p>
+        <p>Request a walk-in token or an appointment online. Salon staff will review your request.</p>
+        <p id="bookingAvailability" role="status" aria-live="polite">Checking online booking availability…</p>
         <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
-          <button class="btn" onclick="openWalkInModal()">⚡ Get Instant Walk-in Token</button>
-          <button class="btn secondary" onclick="switchTab('appointments', document.querySelectorAll('.nav-item')[3])">📅 Book Future Appointment</button>
+          <button class="btn customer-booking-button" type="button" onclick="openWalkInModal()">⚡ Request Walk-in Token</button>
+          <button class="btn secondary customer-booking-button" type="button" onclick="openPublicAppointmentModal()">📅 Request Appointment</button>
         </div>
       </div>
 
@@ -771,10 +805,25 @@ button:focus-visible,
         <h2>Our Premium Services Menu</h2>
       </div>
       <div class="services-grid" id="portalServicesGrid"></div>
+
+      <div class="card" style="margin-top:24px;">
+        <div class="section-head">
+          <h2>Check a Booking or Token</h2>
+        </div>
+        <p style="color:var(--text-muted); margin-bottom:16px; line-height:1.6;">Enter the private access code shown when you submit a request. The status lookup does not reveal customer contact details.</p>
+        <form onsubmit="lookupPublicRequest(event)">
+          <div class="form-group">
+            <label for="statusAccessCode">Private access code</label>
+            <input id="statusAccessCode" class="form-control" type="text" autocomplete="off" placeholder="Paste your access code">
+          </div>
+          <button class="btn" type="submit">Check Status</button>
+        </form>
+        <p id="publicRequestStatus" role="status" aria-live="polite" style="margin-top:16px;"></p>
+      </div>
     </section>
 
     <!-- APPOINTMENTS PANEL -->
-    <section id="appointments" class="panel">
+    <section id="appointments" class="panel access-hidden" data-staff-only>
       <div class="card">
         <div class="section-head">
           <h2>Appointments Schedule</h2>
@@ -787,7 +836,7 @@ button:focus-visible,
     </section>
 
     <!-- CUSTOMERS CRM PANEL -->
-    <section id="customers" class="panel">
+    <section id="customers" class="panel access-hidden" data-staff-only>
       <div class="card">
         <div class="section-head">
           <h2>Customer Directory & CRM</h2>
@@ -803,7 +852,7 @@ button:focus-visible,
     </section>
 
     <!-- SERVICES & PRICING PANEL -->
-    <section id="services" class="panel">
+    <section id="services" class="panel access-hidden" data-staff-only>
       <div class="section-head">
         <h2>Salon Services & Pricing</h2>
         <button class="btn" onclick="openServiceModal()">+ Add Service</button>
@@ -812,7 +861,7 @@ button:focus-visible,
     </section>
 
     <!-- STAFF TEAM PANEL -->
-    <section id="staff" class="panel">
+    <section id="staff" class="panel access-hidden" data-staff-only>
       <div class="card">
         <div class="section-head">
           <h2>Stylist & Beautician Team</h2>
@@ -825,7 +874,7 @@ button:focus-visible,
     </section>
 
     <!-- REPORTS & ANALYTICS PANEL -->
-    <section id="reports" class="panel">
+    <section id="reports" class="panel access-hidden" data-staff-only>
       <div class="stat-grid">
         <div class="card stat-card">
           <div class="label">Total CRM Customers</div>
@@ -850,7 +899,7 @@ button:focus-visible,
           <h2>System Data Maintenance</h2>
         </div>
         <p style="color:var(--text-muted); margin-bottom:20px; line-height:1.6;">
-          All salon records are stored locally in your browser storage with auto-recovery. You can export or import your salon data backup at any time.
+          Legacy staff workspace records remain on this device. Online customer requests are stored in Supabase and are available to signed-in staff.
         </p>
         <div style="display:flex; gap:14px; flex-wrap:wrap;">
           <button class="btn secondary" onclick="exportDataBackup()">📥 Export Data Backup</button>
@@ -863,7 +912,7 @@ button:focus-visible,
 
 <!-- MODAL DIALOG CONTAINER -->
 <div class="modal-overlay" id="modalOverlay">
-  <div class="modal-card">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitleTitle">
     <div class="modal-header">
       <h3 id="modalTitleTitle">Form</h3>
       <button class="modal-close" onclick="closeModal()">✕</button>
@@ -877,16 +926,33 @@ button:focus-visible,
   <span id="toastMsg">Action completed successfully.</span>
 </div>
 
+<script src="supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const STORAGE_KEY = 'reeta_salon_suite_v1';
+const supabaseConfig = window.REETA_SUPABASE_CONFIG || {};
+let supabaseClient = null;
+let supabaseInitializationError = null;
+let staffAuthenticated = false;
+let staffUserId = null;
+let publicServices = [];
+let bookingBackendReady = false;
+
+if (supabaseConfig.url && supabaseConfig.anonKey) {
+  if (!window.supabase || !window.supabase.createClient) {
+    supabaseInitializationError = new Error('Supabase client library is unavailable.');
+  } else {
+    try {
+      supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey);
+    } catch (error) {
+      supabaseInitializationError = error;
+      console.error('Supabase configuration is invalid.', error);
+    }
+  }
+}
 
 let salonData = {
-  customers: [
-    { id: 1, name: 'Ananya Sharma', phone: '9876543210', visits: 5, spent: 3400 },
-    { id: 2, name: 'Rahul Das', phone: '9123456780', visits: 3, spent: 1350 },
-    { id: 3, name: 'Priya Singh', phone: '9988776655', visits: 7, spent: 5800 },
-    { id: 4, name: 'Vikram Mehta', phone: '9711223344', visits: 2, spent: 900 }
-  ],
+  customers: [],
   services: [
     { id: 1, name: 'Signature Haircut & Styling', price: 450, duration: 35, img: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fef3c7'/%3E%3Cstop offset='1' stop-color='%23d97706'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='600' height='400' fill='url(%23b)'/%3E%3Ccircle cx='300' cy='200' r='110' fill='%23fcd34d' fill-opacity='.35'/%3E%3C/svg%3E` },
     { id: 2, name: 'Rejuvenating Hair Spa', price: 850, duration: 50, img: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ffe4e6'/%3E%3Cstop offset='1' stop-color='%23fb7185'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='600' height='400' fill='url(%23b)'/%3E%3Ccircle cx='300' cy='200' r='110' fill='%23fda4af' fill-opacity='.35'/%3E%3C/svg%3E` },
@@ -895,24 +961,13 @@ let salonData = {
     { id: 5, name: 'Bridal & Party Makeover', price: 4500, duration: 120, img: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230d0d12'/%3E%3Cstop offset='1' stop-color='%231e1b2e'/%3E%3C/linearGradient%3E%3CradialGradient id='g' cx='0.75' cy='0.25' r='0.7'%3E%3Cstop offset='0' stop-color='%23fbbf24' stop-opacity='.55'/%3E%3Cstop offset='1' stop-color='%23fbbf24' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='600' height='400' fill='url(%23b)'/%3E%3Crect width='600' height='400' fill='url(%23g)'/%3E%3Ccircle cx='300' cy='200' r='90' fill='none' stroke='%23d4af37' stroke-width='2'/%3E%3Ccircle cx='300' cy='200' r='70' fill='%23d4af37' fill-opacity='.12'/%3E%3C/svg%3E` },
     { id: 6, name: 'Beard Sculpting & Grooming', price: 300, duration: 25, img: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%231c1917'/%3E%3Cstop offset='1' stop-color='%237c2d12'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='600' height='400' fill='url(%23b)'/%3E%3Ccircle cx='300' cy='200' r='110' fill='%23d6a374' fill-opacity='.2'/%3E%3C/svg%3E` }
   ],
-  staff: [
-    { id: 1, name: 'Reeta (Founder)', role: 'Master Stylist & Owner', status: 'Available' },
-    { id: 2, name: 'Amit Verma', role: 'Senior Stylist', status: 'Busy' },
-    { id: 3, name: 'Pooja Reddy', role: 'Lead Beautician', status: 'Available' },
-    { id: 4, name: 'Rohit Sen', role: 'Grooming Specialist', status: 'Available' }
-  ],
-  appointments: [
-    { id: 1, customer: 'Ananya Sharma', service: 'Rejuvenating Hair Spa', date: new Date().toISOString().slice(0,10), time: '14:30', status: 'Confirmed' },
-    { id: 2, customer: 'Rahul Das', service: 'Signature Haircut & Styling', date: new Date().toISOString().slice(0,10), time: '16:00', status: 'Confirmed' }
-  ],
-  queue: [
-    { id: 101, token: 'A001', customer: 'Priya Singh', phone: '9988776655', service: 'Gold Radiance Facial', priority: 'Normal', status: 'Waiting', time: '10:15 AM' },
-    { id: 102, token: 'A002', customer: 'Vikram Mehta', phone: '9711223344', service: 'Beard Sculpting & Grooming', priority: 'Priority', status: 'Waiting', time: '10:30 AM' }
-  ],
+  staff: [],
+  appointments: [],
+  queue: [],
   nowServing: null,
-  tokenCounter: 2,
-  completedCount: 12,
-  revenueToday: 7850
+  tokenCounter: 0,
+  completedCount: 0,
+  revenueToday: 0
 };
 
 // Load data from localStorage safely
@@ -937,6 +992,335 @@ function saveData() {
     console.error('Error saving localStorage:', e);
   }
   renderAll();
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[character]));
+}
+
+function setStaffVisibility(visible) {
+  document.querySelectorAll('[data-staff-only]').forEach(element => {
+    element.classList.toggle('access-hidden', !visible);
+  });
+  document.getElementById('staffSignInButton').classList.toggle('access-hidden', visible);
+  document.getElementById('staffSignOutButton').classList.toggle('access-hidden', !visible);
+}
+
+function setBookingAvailability(available, message) {
+  bookingBackendReady = available;
+  document.getElementById('bookingAvailability').textContent = message;
+  document.querySelectorAll('.customer-booking-button').forEach(button => {
+    button.disabled = !available;
+  });
+}
+
+function renderPublicServices() {
+  const portalGrid = document.getElementById('portalServicesGrid');
+  if (!publicServices.length) {
+    portalGrid.innerHTML = '<div class="empty-state">The online service menu is unavailable until booking setup is complete.</div>';
+    return;
+  }
+
+  portalGrid.innerHTML = publicServices.map(service => `
+    <div class="service-card">
+      <div>
+        <h3>${escapeHtml(service.name)}</h3>
+        <p style="color:var(--text-muted); font-size:13px; margin-top:6px;">${escapeHtml(service.description || 'Salon service')}</p>
+      </div>
+      <div class="service-meta">
+        <div class="service-price">₹${Number(service.price).toLocaleString('en-IN')}</div>
+        <div class="service-duration">${Number(service.duration_minutes)} mins</div>
+      </div>
+      <button class="btn secondary customer-booking-button" type="button" data-service-name="${escapeHtml(service.name)}" onclick="openWalkInModal(this.dataset.serviceName)" ${bookingBackendReady ? '' : 'disabled'}>
+        Book Now
+      </button>
+    </div>
+  `).join('');
+}
+
+function syncStaffServiceCatalog() {
+  if (!staffAuthenticated) return;
+  salonData.services = publicServices.map(service => ({
+    id: service.id,
+    name: service.name,
+    price: Number(service.price),
+    duration: Number(service.duration_minutes),
+    img: ''
+  }));
+}
+
+function clearStaffWorkspace() {
+  staffAuthenticated = false;
+  staffUserId = null;
+  setStaffVisibility(false);
+  salonData.customers = [];
+  salonData.staff = [];
+  salonData.appointments = [];
+  salonData.queue = [];
+  salonData.nowServing = null;
+  salonData.tokenCounter = 0;
+  salonData.completedCount = 0;
+  salonData.revenueToday = 0;
+  document.getElementById('statCustomers').textContent = '0';
+  document.getElementById('statWaiting').textContent = '0';
+  document.getElementById('statCompleted').textContent = '0';
+  document.getElementById('statRevenue').textContent = '₹0';
+  document.getElementById('dashMiniQueue').innerHTML = '';
+  document.getElementById('queueTableContainer').innerHTML = '';
+  document.getElementById('appointmentTableContainer').innerHTML = '';
+  document.getElementById('customerTableContainer').innerHTML = '';
+  document.getElementById('staffTableContainer').innerHTML = '';
+  document.getElementById('onlineRequestsContainer').innerHTML = '';
+  document.getElementById('onlineRequestsMessage').textContent = '';
+}
+
+async function loadPublicServices() {
+  if (!supabaseClient) {
+    publicServices = [];
+    renderPublicServices();
+    const message = supabaseInitializationError
+      ? 'Online booking is unavailable because Supabase configuration is invalid.'
+      : 'Online booking and staff sign-in are unavailable until Supabase is configured.';
+    setBookingAvailability(false, message);
+    return false;
+  }
+
+  const { data, error } = await supabaseClient
+    .from('salon_services')
+    .select('id, name, description, price, duration_minutes')
+    .eq('is_active', true)
+    .order('name');
+
+  if (error) {
+    console.error('Could not load online salon services.', error);
+    publicServices = [];
+    renderPublicServices();
+    setBookingAvailability(false, 'Online booking is unavailable. Please try again later.');
+    return false;
+  }
+
+  publicServices = data || [];
+  syncStaffServiceCatalog();
+  renderPublicServices();
+  if (!publicServices.length) {
+    setBookingAvailability(false, 'Online booking is unavailable because no active services are configured.');
+    return false;
+  }
+
+  setBookingAvailability(true, 'Online booking is available.');
+  return true;
+}
+
+function openStaffLogin() {
+  closeNavigation(false);
+  const unavailableMessage = !supabaseClient
+    ? (supabaseInitializationError
+      ? 'Staff sign-in is unavailable because the Supabase client could not be initialized.'
+      : 'Staff sign-in is unavailable until Supabase is configured.')
+    : '';
+  openModal('Staff Sign In', `
+    <form onsubmit="signInStaff(event)">
+      <div class="form-group">
+        <label for="staffEmail">Email</label>
+        <input class="form-control" id="staffEmail" type="email" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label for="staffPassword">Password</label>
+        <input class="form-control" id="staffPassword" type="password" autocomplete="current-password" required>
+      </div>
+      <p class="booking-error" id="staffAuthError" role="alert">${unavailableMessage}</p>
+      <button class="btn" type="submit" ${supabaseClient ? '' : 'disabled'}>Sign In</button>
+    </form>
+    <p style="color:var(--text-muted); margin-top:16px;">Staff accounts are created and managed by the salon administrator.</p>
+  `);
+  document.getElementById('staffEmail').focus();
+}
+
+async function signInStaff(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const errorOutput = form.querySelector('#staffAuthError');
+  const submitButton = form.querySelector('button[type="submit"]');
+  errorOutput.textContent = '';
+  if (!supabaseClient) {
+    errorOutput.textContent = 'Staff sign-in is unavailable until Supabase is configured.';
+    return;
+  }
+
+  submitButton.disabled = true;
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email: form.querySelector('#staffEmail').value.trim(),
+      password: form.querySelector('#staffPassword').value
+    });
+    if (error) throw error;
+
+    const verified = await verifyStaffAccess(data.session, errorOutput);
+    if (verified) {
+      closeModal();
+      showToast('Staff sign-in successful.');
+    }
+  } catch (error) {
+    console.error('Staff sign-in failed.', error);
+    errorOutput.textContent = 'Sign-in failed. Check your credentials and try again.';
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
+async function verifyStaffAccess(session, errorOutput) {
+  if (!session || !session.user) return false;
+  if (staffAuthenticated && staffUserId === session.user.id) return true;
+
+  const { data: profile, error } = await supabaseClient
+    .from('staff_profiles')
+    .select('user_id')
+    .eq('user_id', session.user.id)
+    .maybeSingle();
+
+  if (error || !profile) {
+    if (error) console.error('Could not verify staff access.', error);
+    if (errorOutput) {
+      errorOutput.textContent = error
+        ? 'Staff access could not be verified. Check the Supabase setup and try again.'
+        : 'This account is not authorized as salon staff.';
+    }
+    await supabaseClient.auth.signOut();
+    return false;
+  }
+
+  staffAuthenticated = true;
+  staffUserId = session.user.id;
+  setStaffVisibility(true);
+  loadData();
+  syncStaffServiceCatalog();
+  renderAll();
+  switchTab('dashboard', document.querySelector('[data-panel="dashboard"]'));
+  await loadCustomerRequests();
+  return true;
+}
+
+async function signOutStaff() {
+  if (!supabaseClient) return;
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) {
+    console.error('Staff sign-out failed.', error);
+    showToast('Could not sign out. Please try again.');
+    return;
+  }
+
+  staffAuthenticated = false;
+  clearStaffWorkspace();
+  switchTab('clientPortal', document.querySelector('[data-panel="clientPortal"]'));
+  await loadPublicServices();
+  showToast('Signed out.');
+}
+
+function renderCustomerRequests(requests) {
+  const container = document.getElementById('onlineRequestsContainer');
+  if (!requests.length) {
+    container.innerHTML = '<div class="empty-state">No online booking or token requests yet.</div>';
+    return;
+  }
+
+  const statuses = ['pending', 'confirmed', 'serving', 'completed', 'cancelled'];
+  container.innerHTML = `
+    <table class="table">
+      <thead>
+        <tr><th>Token</th><th>Type</th><th>Customer</th><th>Service</th><th>Requested</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        ${requests.map(request => `
+          <tr>
+            <td><b>T-${request.request_number}</b></td>
+            <td>${request.request_type === 'walk_in' ? 'Walk-in token' : 'Appointment'}</td>
+            <td><b>${escapeHtml(request.customer_name)}</b><br><small>${escapeHtml(request.customer_phone)}</small></td>
+            <td>${escapeHtml(request.service_name)}</td>
+            <td>${escapeHtml(request.requested_date || 'Walk-in')} ${escapeHtml(request.requested_time || '')}</td>
+            <td>
+              <select class="form-control" data-request-id="${escapeHtml(request.id)}" aria-label="Status for token T-${request.request_number}">
+                ${statuses.map(status => `<option value="${status}" ${status === request.status ? 'selected' : ''}>${status[0].toUpperCase()}${status.slice(1)}</option>`).join('')}
+              </select>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function loadCustomerRequests() {
+  if (!staffAuthenticated || !supabaseClient) return;
+
+  const message = document.getElementById('onlineRequestsMessage');
+  message.textContent = 'Loading online requests…';
+  const { data, error } = await supabaseClient
+    .from('customer_requests')
+    .select('id, request_number, request_type, customer_name, customer_phone, service_name, requested_date, requested_time, status')
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  if (error) {
+    console.error('Could not load online customer requests.', error);
+    document.getElementById('onlineRequestsContainer').innerHTML = '';
+    message.textContent = 'Online requests could not be loaded. Check the Supabase setup and try again.';
+    return;
+  }
+
+  renderCustomerRequests(data || []);
+  message.textContent = data && data.length ? `Showing the latest ${data.length} online request${data.length === 1 ? '' : 's'}.` : '';
+}
+
+document.getElementById('onlineRequestsContainer').addEventListener('change', async event => {
+  const control = event.target.closest('select[data-request-id]');
+  if (!control || !staffAuthenticated || !supabaseClient) return;
+
+  control.disabled = true;
+  const { error } = await supabaseClient
+    .from('customer_requests')
+    .update({ status: control.value })
+    .eq('id', control.dataset.requestId);
+
+  if (error) {
+    console.error('Could not update online request status.', error);
+    await loadCustomerRequests();
+    document.getElementById('onlineRequestsMessage').textContent = 'The request status was not updated. Please try again.';
+    return;
+  }
+  showToast('Request status updated.');
+  await loadCustomerRequests();
+});
+
+async function initializeApp() {
+  setStaffVisibility(false);
+  switchTab('clientPortal', document.querySelector('[data-panel="clientPortal"]'));
+  renderPublicServices();
+  await loadPublicServices();
+  if (!supabaseClient) return;
+
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+      Promise.resolve().then(() => {
+        clearStaffWorkspace();
+        switchTab('clientPortal', document.querySelector('[data-panel="clientPortal"]'));
+      });
+    } else if (event === 'TOKEN_REFRESHED' && session && session.user.id !== staffUserId) {
+      Promise.resolve().then(() => verifyStaffAccess(session));
+    }
+  });
+
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) {
+    console.error('Could not restore the staff session.', error);
+    return;
+  }
+  if (data.session) await verifyStaffAccess(data.session);
 }
 
 function showToast(msg) {
@@ -1018,23 +1402,25 @@ window.addEventListener('resize', () => {
 
 // Navigation
 function switchTab(tabId, btnElement) {
+  const panel = document.getElementById(tabId);
+  if (!panel) return;
+  if (panel.hasAttribute('data-staff-only') && !staffAuthenticated) {
+    closeNavigation(false);
+    openStaffLogin();
+    return;
+  }
+
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
+  panel.classList.add('active');
 
   document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-  if (btnElement) {
-    btnElement.classList.add('active');
-  } else {
-    const map = {dashboard:0, queue:1, clientPortal:2, appointments:3, customers:4, services:5, staff:6, reports:7};
-    if (map[tabId] !== undefined) {
-      document.querySelectorAll('.nav-item')[map[tabId]].classList.add('active');
-    }
-  }
+  const selectedNav = btnElement || document.querySelector(`.nav-item[data-panel="${tabId}"]`);
+  if (selectedNav) selectedNav.classList.add('active');
 
   const titles = {
     dashboard: ['Dashboard & Overview', 'Real-time salon operations, queue tokens, appointments, and analytics.'],
-    queue: ['Live Token Queue', 'Manage walk-ins, priority tokens, and queue flow.'],
-    clientPortal: ['Client Booking Portal', 'Explore services and book instant tokens or appointments.'],
+    queue: ['Live Token Queue', 'Manage walk-ins, priority tokens, and online customer requests.'],
+    clientPortal: ['Client Booking Portal', 'Explore services and submit a walk-in token or appointment request.'],
     appointments: ['Appointments Schedule', 'Upcoming scheduled visits and bookings.'],
     customers: ['Customer Directory & CRM', 'View customer history, total spent, and contact details.'],
     services: ['Services & Pricing', 'Manage salon treatments, prices, and durations.'],
@@ -1043,6 +1429,7 @@ function switchTab(tabId, btnElement) {
   };
   if (titles[tabId]) {
     document.getElementById('pageTitle').textContent = titles[tabId][0];
+    document.querySelector('.header-copy p').textContent = titles[tabId][1];
   }
   closeNavigation();
 }
@@ -1226,71 +1613,184 @@ function resetQueueToday() {
 }
 
 // Client Quick Walk-In
-function openWalkInModal() {
-  const options = salonData.services.map(s => `<option value="${s.name}">${s.name} (₹${s.price})</option>`).join('');
-  openModal('Get Instant Walk-in Token', `
-    <div class="form-group">
-      <label>Your Full Name</label>
-      <input type="text" class="form-control" id="wiName" placeholder="Enter your name">
-    </div>
-    <div class="form-group">
-      <label>Mobile Number</label>
-      <input type="text" class="form-control" id="wiPhone" placeholder="10-digit mobile">
-    </div>
-    <div class="form-group">
-      <label>Choose Service</label>
-      <select class="form-control" id="wiService">${options}</select>
-    </div>
-    <button class="btn" style="width:100%; justify-content:center; padding:14px;" onclick="submitWalkIn()">Get My Token Now</button>
+function openWalkInModal(selectedService = '') {
+  if (!bookingBackendReady) {
+    showToast('Online booking is currently unavailable. No request has been submitted.');
+    return;
+  }
+  const options = publicServices.map(service => `
+    <option value="${escapeHtml(service.name)}" ${service.name === selectedService ? 'selected' : ''}>
+      ${escapeHtml(service.name)} (₹${Number(service.price).toLocaleString('en-IN')})
+    </option>
+  `).join('');
+  openModal('Request a Walk-in Token', `
+    <form onsubmit="submitWalkIn(event)">
+      <div class="form-group">
+        <label for="wiName">Your Full Name</label>
+        <input type="text" class="form-control" id="wiName" autocomplete="name" maxlength="120" required>
+      </div>
+      <div class="form-group">
+        <label for="wiPhone">Mobile Number</label>
+        <input type="tel" class="form-control" id="wiPhone" autocomplete="tel" maxlength="32" required>
+      </div>
+      <div class="form-group">
+        <label for="wiService">Choose Service</label>
+        <select class="form-control" id="wiService" required>${options}</select>
+      </div>
+      <p class="booking-error" data-request-error role="alert"></p>
+      <button class="btn" style="width:100%; justify-content:center; padding:14px;" type="submit">Submit Token Request</button>
+    </form>
   `);
 }
 
-function submitWalkIn() {
-  const name = document.getElementById('wiName').value.trim();
-  const phone = document.getElementById('wiPhone').value.trim();
-  const service = document.getElementById('wiService').value;
+async function submitWalkIn(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  await submitCustomerRequest(form, {
+    requestType: 'walk_in',
+    customerName: form.querySelector('#wiName').value.trim(),
+    customerPhone: form.querySelector('#wiPhone').value.trim(),
+    serviceName: form.querySelector('#wiService').value
+  });
+}
 
-  if (!name || !phone) {
-    alert('Please enter your name and phone number.');
+function openPublicAppointmentModal() {
+  if (!bookingBackendReady) {
+    showToast('Online booking is currently unavailable. No request has been submitted.');
+    return;
+  }
+  const options = publicServices.map(service => `
+    <option value="${escapeHtml(service.name)}">${escapeHtml(service.name)} (₹${Number(service.price).toLocaleString('en-IN')})</option>
+  `).join('');
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  openModal('Request an Appointment', `
+    <form onsubmit="submitPublicAppointment(event)">
+      <div class="form-group">
+        <label for="publicAppointmentName">Your Full Name</label>
+        <input class="form-control" id="publicAppointmentName" type="text" autocomplete="name" maxlength="120" required>
+      </div>
+      <div class="form-group">
+        <label for="publicAppointmentPhone">Mobile Number</label>
+        <input class="form-control" id="publicAppointmentPhone" type="tel" autocomplete="tel" maxlength="32" required>
+      </div>
+      <div class="form-group">
+        <label for="publicAppointmentService">Choose Service</label>
+        <select class="form-control" id="publicAppointmentService" required>${options}</select>
+      </div>
+      <div class="form-group">
+        <label for="publicAppointmentDate">Date</label>
+        <input class="form-control" id="publicAppointmentDate" type="date" min="${today}" value="${today}" required>
+      </div>
+      <div class="form-group">
+        <label for="publicAppointmentTime">Time</label>
+        <input class="form-control" id="publicAppointmentTime" type="time" required>
+      </div>
+      <p class="booking-error" data-request-error role="alert"></p>
+      <button class="btn" type="submit">Submit Appointment Request</button>
+    </form>
+  `);
+}
+
+async function submitPublicAppointment(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  await submitCustomerRequest(form, {
+    requestType: 'appointment',
+    customerName: form.querySelector('#publicAppointmentName').value.trim(),
+    customerPhone: form.querySelector('#publicAppointmentPhone').value.trim(),
+    serviceName: form.querySelector('#publicAppointmentService').value,
+    requestedDate: form.querySelector('#publicAppointmentDate').value,
+    requestedTime: form.querySelector('#publicAppointmentTime').value
+  });
+}
+
+async function submitCustomerRequest(form, request) {
+  const errorOutput = form.querySelector('[data-request-error]');
+  const submitButton = form.querySelector('button[type="submit"]');
+  errorOutput.textContent = '';
+  if (!supabaseClient || !bookingBackendReady) {
+    errorOutput.textContent = 'Online booking is unavailable. No request has been submitted.';
     return;
   }
 
-  salonData.tokenCounter++;
-  const tokenCode = 'A' + String(salonData.tokenCounter).padStart(3, '0');
-  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const originalLabel = submitButton.textContent;
+  submitButton.disabled = true;
+  submitButton.textContent = 'Submitting…';
+  try {
+    const { data, error } = await supabaseClient.rpc('submit_customer_request', {
+      p_request_type: request.requestType,
+      p_customer_name: request.customerName,
+      p_customer_phone: request.customerPhone,
+      p_service_name: request.serviceName,
+      p_requested_date: request.requestedDate || null,
+      p_requested_time: request.requestedTime || null
+    });
+    if (error) throw error;
 
-  let c = salonData.customers.find(x => x.name.toLowerCase() === name.toLowerCase());
-  if (!c) {
-    c = { id: Date.now(), name, phone, visits: 0, spent: 0 };
-    salonData.customers.push(c);
+    const result = Array.isArray(data) ? data[0] : data;
+    if (!result || !result.receipt_token || !result.token_label) {
+      throw new Error('Supabase returned an incomplete request receipt.');
+    }
+
+    closeModal();
+    showRequestReceipt(result);
+  } catch (error) {
+    console.error('Customer request could not be submitted.', error);
+    errorOutput.textContent = 'Your request could not be saved online. No request was created. Please try again later.';
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = originalLabel;
   }
+}
 
-  salonData.queue.push({
-    id: Date.now(),
-    token: tokenCode,
-    customer: name,
-    phone,
-    service,
-    priority: 'Normal',
-    status: 'Waiting',
-    time: timeStr
-  });
-
-  closeModal();
-  saveData();
-
-  openModal('Your Token Issued!', `
-    <div style="text-align:center; padding:20px;">
-      <div style="font-size:14px; color:var(--text-muted); text-transform:uppercase;">Your Token Number</div>
-      <div style="font-size:64px; font-weight:900; color:var(--accent); font-family:'Playfair Display',serif; margin:10px 0;">${tokenCode}</div>
-      <p style="font-size:16px; font-weight:600; margin-bottom:10px;">${name}</p>
-      <p style="color:var(--text-muted); font-size:14px; margin-bottom:20px;">Service: ${service}</p>
-      <div style="background:var(--surface-hover); padding:14px; border-radius:10px; font-size:13px; color:var(--text); margin-bottom:20px;">
-        Please relax in our lounge area. Your token will be called shortly!
+function showRequestReceipt(request) {
+  const privateToken = escapeHtml(request.receipt_token);
+  openModal('Request Submitted', `
+    <div>
+      <p>Your request is saved for salon staff to review.</p>
+      <p style="margin-top:16px;">Request number: <strong>${escapeHtml(request.token_label)}</strong></p>
+      <div class="form-group" style="margin-top:16px;">
+        <label for="receiptAccessCode">Private access code</label>
+        <input class="form-control" id="receiptAccessCode" type="text" readonly value="${privateToken}" onclick="this.select()">
       </div>
-      <button class="btn" style="width:100%; justify-content:center;" onclick="closeModal()">Done</button>
+      <p style="color:var(--text-muted); margin-bottom:16px;">Keep this code to check the request status. Anyone with the code can view its status, but not your contact details.</p>
+      <button class="btn" type="button" onclick="closeModal()">Done</button>
     </div>
   `);
+}
+
+async function lookupPublicRequest(event) {
+  event.preventDefault();
+  const output = document.getElementById('publicRequestStatus');
+  const token = document.getElementById('statusAccessCode').value.trim();
+  output.textContent = '';
+  if (!supabaseClient) {
+    output.textContent = 'Online status lookup is unavailable until Supabase is configured.';
+    return;
+  }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)) {
+    output.textContent = 'Enter the private access code from your request receipt.';
+    return;
+  }
+
+  const { data, error } = await supabaseClient.rpc('get_public_request_status', {
+    p_receipt_token: token
+  });
+  if (error) {
+    console.error('Could not look up the public request status.', error);
+    output.textContent = 'Status could not be checked. Please try again later.';
+    return;
+  }
+  const request = Array.isArray(data) ? data[0] : data;
+  if (!request) {
+    output.textContent = 'No request matched that code. Check the code and try again.';
+    return;
+  }
+  const schedule = request.requested_date
+    ? ` for ${request.requested_date}${request.requested_time ? ` at ${request.requested_time}` : ''}`
+    : '';
+  output.textContent = `${request.token_label}: ${request.request_status} — ${request.service_name}${schedule}.`;
 }
 
 // Appointments
@@ -1393,51 +1893,74 @@ function submitCustomer() {
 
 // Services
 function openServiceModal() {
+  if (!staffAuthenticated || !supabaseClient) {
+    openStaffLogin();
+    return;
+  }
   openModal('Add New Service', `
     <div class="form-group">
-      <label>Service Name</label>
-      <input type="text" class="form-control" id="sModalName" placeholder="e.g. Hair Coloring">
+      <label for="sModalName">Service Name</label>
+      <input type="text" class="form-control" id="sModalName" maxlength="100" placeholder="e.g. Hair Coloring">
     </div>
     <div class="form-group">
-      <label>Price (₹)</label>
-      <input type="number" class="form-control" id="sModalPrice" placeholder="500">
+      <label for="sModalPrice">Price (₹)</label>
+      <input type="number" class="form-control" id="sModalPrice" min="0" step="0.01" placeholder="500">
     </div>
     <div class="form-group">
-      <label>Duration (Minutes)</label>
-      <input type="number" class="form-control" id="sModalDuration" value="30">
+      <label for="sModalDuration">Duration (Minutes)</label>
+      <input type="number" class="form-control" id="sModalDuration" min="5" max="600" value="30">
     </div>
+    <p class="booking-error" id="serviceFormError" role="alert"></p>
     <button class="btn" style="width:100%; justify-content:center; padding:14px;" onclick="submitService()">Add Service</button>
   `);
 }
 
-function submitService() {
+async function submitService() {
+  if (!staffAuthenticated || !supabaseClient) return;
   const name = document.getElementById('sModalName').value.trim();
-  const price = Number(document.getElementById('sModalPrice').value);
-  const duration = Number(document.getElementById('sModalDuration').value) || 30;
+  const priceValue = document.getElementById('sModalPrice').value.trim();
+  const durationValue = document.getElementById('sModalDuration').value.trim();
+  const price = Number(priceValue);
+  const duration = Number(durationValue);
 
-  if (!name || !price) {
-    alert('Please enter valid service name and price.');
+  if (name.length < 2 || priceValue === '' || !Number.isFinite(price) || price < 0 || durationValue === '' || !Number.isInteger(duration) || duration < 5 || duration > 600) {
+    document.getElementById('serviceFormError').textContent = 'Enter a service name, a non-negative price, and a duration between 5 and 600 minutes.';
     return;
   }
 
-  salonData.services.push({
-    id: Date.now(),
+  const { error } = await supabaseClient.from('salon_services').insert({
     name,
     price,
-    duration
+    duration_minutes: duration
   });
+  if (error) {
+    console.error('Could not add salon service.', error);
+    document.getElementById('serviceFormError').textContent = 'The service could not be saved. Check its name and try again.';
+    return;
+  }
 
   closeModal();
-  saveData();
+  await loadPublicServices();
+  renderAll();
   showToast('Service added to menu.');
 }
 
-function deleteService(id) {
-  if (confirm('Delete this service?')) {
-    salonData.services = salonData.services.filter(s => s.id !== id);
-    saveData();
-    showToast('Service removed.');
+async function deleteService(id) {
+  if (!staffAuthenticated || !supabaseClient) return;
+  if (!confirm('Remove this service from the public menu? Existing requests will keep their service details.')) return;
+
+  const { error } = await supabaseClient
+    .from('salon_services')
+    .update({ is_active: false })
+    .eq('id', id);
+  if (error) {
+    console.error('Could not remove salon service.', error);
+    showToast('Service could not be removed.');
+    return;
   }
+  await loadPublicServices();
+  renderAll();
+  showToast('Service removed from the public menu.');
 }
 
 // Staff
@@ -1578,20 +2101,7 @@ function renderAll() {
     </table>`;
   }
 
-  const portalGrid = document.getElementById('portalServicesGrid');
-  portalGrid.innerHTML = salonData.services.map(s => `
-    <div class="service-card">
-      <div>
-        <h3>${s.name}</h3>
-        <p style="color:var(--text-muted); font-size:13px; margin-top:6px;">Professional salon care using premium organic products.</p>
-      </div>
-      <div class="service-meta">
-        <div class="service-price">₹${s.price}</div>
-        <div class="service-duration">${s.duration} mins</div>
-      </div>
-      <button class="btn secondary" style="margin-top:16px; width:100%; justify-content:center;" onclick="openWalkInModal()">Book Now</button>
-    </div>
-  `).join('');
+  renderPublicServices();
 
   const appCont = document.getElementById('appointmentTableContainer');
   if (salonData.appointments.length === 0) {
@@ -1646,7 +2156,7 @@ function renderAll() {
       </div>
       <div class="service-meta" style="margin-top:16px;">
         <span class="service-duration">${s.duration} mins</span>
-        <button class="btn danger" style="padding:6px 12px; font-size:12px;" onclick="deleteService(${s.id})">Delete</button>
+        <button class="btn danger" style="padding:6px 12px; font-size:12px;" onclick="deleteService('${escapeHtml(s.id)}')">Delete</button>
       </div>
     </div>
   `).join('');
@@ -1675,8 +2185,7 @@ function renderAll() {
   document.getElementById('rAvgTicket').textContent = '₹' + avg.toLocaleString('en-IN');
 }
 
-loadData();
-renderAll();
+initializeApp();
 </script>
 </body>
 </html>
