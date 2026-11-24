@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Reeta Salon Elite & Token Suite</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
 <style>
@@ -392,13 +392,239 @@ select.form-control { cursor: pointer; }
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .toast.show { transform: translateY(0); opacity: 1; }
+
+/* Responsive interaction foundations */
+.menu-toggle,
+.nav-backdrop { display: none; }
+.nav-item,
+.theme-toggle,
+.btn,
+.modal-close,
+.form-control { min-height: 44px; }
+button:focus-visible,
+.form-control:focus-visible,
+.table-container:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+.table-container {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.panel,
+.card { min-width: 0; }
+
+@media (max-width: 900px) {
+  .header-bar { flex-direction: column; }
+  .sidebar {
+    width: min(300px, calc(100vw - 56px));
+    max-width: calc(100vw - 56px);
+    padding: max(20px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+    transform: translateX(-105%);
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 1101;
+    box-shadow: none;
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+    box-shadow: 18px 0 48px rgba(0, 0, 0, 0.38);
+  }
+  .nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    background: rgba(8, 8, 14, 0.62);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+  }
+  .nav-backdrop.show {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  body.nav-open { overflow: hidden; }
+  .main-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-left: 0;
+    padding: 20px;
+  }
+  .menu-toggle {
+    display: inline-flex;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-hover);
+    color: var(--text);
+    font-size: 20px;
+  }
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+  .header-copy { min-width: 0; }
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .main-content {
+    padding: max(12px, env(safe-area-inset-left)) 12px max(20px, env(safe-area-inset-bottom));
+  }
+  .header-bar {
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 18px;
+    padding: 14px;
+  }
+  .header-title { align-items: flex-start; gap: 10px; }
+  .header-copy h1 {
+    font-size: clamp(20px, 5.8vw, 25px);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+  .header-copy p { font-size: 12px; line-height: 1.45; }
+  .header-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 8px;
+  }
+  .header-actions > * { min-width: 0; }
+  .header-actions .btn {
+    justify-content: center;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .clock-badge { text-align: center; padding-inline: 8px; }
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .card { padding: 16px; border-radius: 14px; }
+  .stat-card .num { font-size: clamp(28px, 8vw, 34px); }
+  .stat-card .label { font-size: 11px; line-height: 1.4; }
+  .section-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .section-head h2 { font-size: 18px; }
+  .section-head > div {
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+  .section-head .form-control {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .section-head .btn {
+    flex: 1 1 140px;
+    justify-content: center;
+    white-space: normal;
+  }
+  .section-head > .btn {
+    flex: 0 0 auto;
+    width: 100%;
+    align-self: stretch;
+  }
+  #customerSearchInput { width: 100% !important; }
+  .queue-layout { gap: 14px; }
+  .big-token-box { padding: 24px 16px; }
+  .current-token-num { font-size: 64px; }
+  .current-token-customer { font-size: 18px; }
+  .queue-actions { gap: 8px; }
+  .queue-actions .btn { flex: 1; justify-content: center; padding-inline: 10px; }
+  .services-grid { grid-template-columns: 1fr; gap: 14px; }
+  .service-card { padding: 18px; }
+  .public-banner { padding: 26px 18px; margin-bottom: 22px; }
+  .public-banner h2 { font-size: 28px; line-height: 1.2; }
+  .public-banner p { font-size: 14px; }
+  .public-banner > div { flex-direction: column; }
+  .public-banner .btn { width: 100%; justify-content: center; }
+  .table { min-width: 640px; }
+  .table th,
+  .table td { padding: 12px; }
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal-card {
+    width: 100%;
+    max-width: none;
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    border-radius: 20px 20px 0 0;
+    padding: 24px 18px max(20px, env(safe-area-inset-bottom));
+  }
+  .modal-header { margin-bottom: 18px; }
+  .modal-header h3 { font-size: 20px; }
+  .form-control { font-size: 16px; }
+  .form-group { margin-bottom: 16px; }
+  .toast {
+    left: 12px;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    justify-content: center;
+    padding: 14px 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .main-content { padding-inline: 10px; }
+  .header-bar { padding: 12px; }
+  .header-actions { grid-template-columns: minmax(0, 1fr); }
+  .stat-grid { grid-template-columns: minmax(0, 1fr); }
+  .section-head .btn { flex-basis: 100%; }
+}
+
+@media (max-width: 900px) and (orientation: landscape) {
+  .sidebar {
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .brand { padding-bottom: 12px; margin-bottom: 12px; }
+  .nav-menu { gap: 2px; }
+  .nav-item { padding-block: 8px; }
+  .sidebar-footer { padding-top: 8px; }
+  .modal-overlay { align-items: center; padding: 12px; }
+  .modal-card {
+    width: min(560px, 100%);
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+    border-radius: 20px;
+  }
+}
+
+@media (hover: none) {
+  .btn:hover,
+  .service-card:hover { transform: none; }
+}
 </style>
 </head>
 <body>
 
+<button class="nav-backdrop" id="navBackdrop" type="button" aria-label="Close navigation" tabindex="-1"></button>
 <div class="app-layout">
   <!-- Sidebar Navigation -->
-  <aside class="sidebar" id="sidebar">
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
     <div class="brand">
       <div class="brand-icon">R</div>
       <div>
@@ -445,8 +671,13 @@ select.form-control { cursor: pointer; }
   <main class="main-content">
     <header class="header-bar">
       <div class="header-title">
-        <h1 id="pageTitle">Dashboard & Overview</h1>
-        <p>Real-time salon operations, queue tokens, appointments, and analytics.</p>
+        <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
+          <span aria-hidden="true">☰</span>
+        </button>
+        <div class="header-copy">
+          <h1 id="pageTitle">Dashboard & Overview</h1>
+          <p>Real-time salon operations, queue tokens, appointments, and analytics.</p>
+        </div>
       </div>
       <div class="header-actions">
         <div class="clock-badge" id="liveClock">--:--:--</div>
@@ -519,7 +750,7 @@ select.form-control { cursor: pointer; }
             <button class="btn" onclick="openTokenModal()">+ Generate New Token</button>
           </div>
         </div>
-        <div class="table-container">
+        <div class="table-container" role="region" aria-label="Token queue table; scroll horizontally to view all columns" tabindex="0">
           <div id="queueTableContainer"></div>
         </div>
       </div>
@@ -549,7 +780,7 @@ select.form-control { cursor: pointer; }
           <h2>Appointments Schedule</h2>
           <button class="btn" onclick="openAppointmentModal()">+ Book Appointment</button>
         </div>
-        <div class="table-container">
+        <div class="table-container" role="region" aria-label="Appointments table; scroll horizontally to view all columns" tabindex="0">
           <div id="appointmentTableContainer"></div>
         </div>
       </div>
@@ -565,7 +796,7 @@ select.form-control { cursor: pointer; }
             <button class="btn" onclick="openCustomerModal()">+ Add Customer</button>
           </div>
         </div>
-        <div class="table-container">
+        <div class="table-container" role="region" aria-label="Customer directory table; scroll horizontally to view all columns" tabindex="0">
           <div id="customerTableContainer"></div>
         </div>
       </div>
@@ -587,7 +818,7 @@ select.form-control { cursor: pointer; }
           <h2>Stylist & Beautician Team</h2>
           <button class="btn" onclick="openStaffModal()">+ Add Staff Member</button>
         </div>
-        <div class="table-container">
+        <div class="table-container" role="region" aria-label="Stylist team table; scroll horizontally to view all columns" tabindex="0">
           <div id="staffTableContainer"></div>
         </div>
       </div>
@@ -715,6 +946,76 @@ function showToast(msg) {
   setTimeout(() => box.classList.remove('show'), 3000);
 }
 
+const sidebar = document.getElementById('sidebar');
+const menuToggle = document.getElementById('menuToggle');
+const navBackdrop = document.getElementById('navBackdrop');
+
+function openNavigation() {
+  sidebar.classList.add('mobile-open');
+  navBackdrop.classList.add('show');
+  navBackdrop.setAttribute('aria-hidden', 'false');
+  menuToggle.setAttribute('aria-expanded', 'true');
+  menuToggle.setAttribute('aria-label', 'Close navigation');
+  sidebar.setAttribute('role', 'dialog');
+  sidebar.setAttribute('aria-modal', 'true');
+  document.body.classList.add('nav-open');
+  requestAnimationFrame(() => {
+    const activeItem = sidebar.querySelector('.nav-item.active') || sidebar.querySelector('.nav-item');
+    if (sidebar.classList.contains('mobile-open') && activeItem) activeItem.focus();
+  });
+}
+
+function closeNavigation(restoreFocus = true) {
+  const wasOpen = sidebar.classList.contains('mobile-open');
+  sidebar.classList.remove('mobile-open');
+  navBackdrop.classList.remove('show');
+  navBackdrop.setAttribute('aria-hidden', 'true');
+  menuToggle.setAttribute('aria-expanded', 'false');
+  menuToggle.setAttribute('aria-label', 'Open navigation');
+  sidebar.removeAttribute('role');
+  sidebar.removeAttribute('aria-modal');
+  document.body.classList.remove('nav-open');
+  if (wasOpen && restoreFocus) menuToggle.focus();
+}
+
+menuToggle.addEventListener('click', () => {
+  if (sidebar.classList.contains('mobile-open')) {
+    closeNavigation();
+  } else {
+    openNavigation();
+  }
+});
+
+navBackdrop.addEventListener('click', () => closeNavigation());
+
+sidebar.addEventListener('keydown', event => {
+  if (event.key !== 'Tab') return;
+  const focusableItems = sidebar.querySelectorAll('button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])');
+  const firstItem = focusableItems[0];
+  const lastItem = focusableItems[focusableItems.length - 1];
+  if (!firstItem || !lastItem) return;
+  if (event.shiftKey && document.activeElement === firstItem) {
+    event.preventDefault();
+    lastItem.focus();
+  } else if (!event.shiftKey && document.activeElement === lastItem) {
+    event.preventDefault();
+    firstItem.focus();
+  }
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
+    event.preventDefault();
+    closeNavigation();
+  }
+});
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900 && sidebar.classList.contains('mobile-open')) {
+    closeNavigation(false);
+  }
+});
+
 // Navigation
 function switchTab(tabId, btnElement) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -743,6 +1044,7 @@ function switchTab(tabId, btnElement) {
   if (titles[tabId]) {
     document.getElementById('pageTitle').textContent = titles[tabId][0];
   }
+  closeNavigation();
 }
 
 // Clock
