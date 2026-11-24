@@ -1,14 +1,26 @@
-# Reeta-salon
+# Reeta Salon Elite & Token Suite
 
-Reeta-salon is deployed as a static website with GitHub Pages.
+A static salon management portal and customer booking and digital token suite.
+
+## Features
+
+- Client booking portal for services, walk-ins, and appointments
+- Live token queue management with priority flags
+- Admin and receptionist dashboard with revenue and customer statistics
+- Customer directory, service pricing, and stylist team management
+- Dark and light themes
+- Browser-local data persistence with JSON backup and restore
+
+## Tech stack
+
+- HTML, CSS, and vanilla JavaScript; no build step
+- Inline SVG graphics and Google Fonts
 
 ## Free hosted URL
 
-After Pages is enabled for this repository, the free hosted URL is:
-
 `https://rajasuna.github.io/Reeta-salon/`
 
-GitHub Pages is available at no hosting cost for public repositories. The site files are served directly from the `main` branch.
+GitHub Pages serves the static site directly from this repository at no hosting cost for public repositories.
 
 ## Enable GitHub Pages
 
